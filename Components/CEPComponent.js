@@ -2,12 +2,14 @@
   OMDB api key : c5f68364
 */
 
+
+
 var ComponentMain = new Vue({
     el:"#ComponentMain",
     data:{
       cep:null,
       cepaddress:{},
-      allcepaddress:[]
+      allcepaddress: new Array
     },
     methods:{
       getAddress:function(){
@@ -38,13 +40,15 @@ var ComponentMain = new Vue({
           state: address.state,
           code:address.code
         }
-        let alladdress = this.allcepaddress;
-        for(var c in alladdress){
-          if(alladdress[c].code == modelAddress.code) {
+        let alladdressfav = this.allcepaddress;
+        for(var c in alladdressfav){
+          if(alladdressfav[c].code == modelAddress.code) {
             this.showToastAlreadyFav();
             return; 
           }
         }
+        console.log(this.alladdress)
+        if(!this.alladdress) this.alladdress = [];
         this.allcepaddress.push(modelAddress);
         this.setLocalStorageCEPAddress();
       },
@@ -52,8 +56,8 @@ var ComponentMain = new Vue({
         this.allcepaddress.splice(idx,1);
       },
       convertFavAddressToString: function(){
-        let alladdress = this.getAllFavAddress();
-        let strAddress = JSON.stringify(alladdress);
+        let alladdressconvert = this.getAllFavAddress();
+        let strAddress = JSON.stringify(alladdressconvert);
         return strAddress;
       },
       setLocalStorageCEPAddress: function(){
@@ -70,7 +74,7 @@ var ComponentMain = new Vue({
         return arrAddress;
       },
       setFavAddressFromLocalStorage: function(arrAddress){
-        this.allcepaddress = arrAddress;
+        this.allcepaddress = arrAddress || [];
       },
       showToastAlreadyFav: function(){
         const toastAlreadyFavAddress = document.getElementById('toastAlreadyFavAddress');
@@ -79,7 +83,7 @@ var ComponentMain = new Vue({
       }
     },
     mounted:function(){
-      let alladdress = this.getLocalStorageCEPAddress();
-      this.setFavAddressFromLocalStorage(alladdress)
+      let loadalladdress = this.getLocalStorageCEPAddress();
+      this.setFavAddressFromLocalStorage(loadalladdress)
     }
 })
