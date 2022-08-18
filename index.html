@@ -11,79 +11,116 @@
 </head>
 <body>
     <div id="ComponentMain" class="container-fluid mt-3">
-        <div class="row">
-            <div class="col-12">
-                <h2>Buscar endereço por CEP</h2>
-            </div>
-            <div class="col">
+        <cep-component inline-template>
+            <div>
                 <div class="row">
-                    <form action="" class="form-inline">
+                    <div class="col-12">
+                        <h2>Buscar endereço por CEP</h2>
+                    </div>
+                    <div class="col">
                         <div class="row">
-                            <div class="col">
-                                <div class="mb-3">
-                                    <input type="text" class="form-control" id="cep" placeholder="CEP"
-                                    v-model="cep">
+                            <form class="form-inline" v-on:submit.prevent="formCepValidate">
+                                <div class="row">
+                                    <div class="col">
+                                        <div class="mb-3">
+                                            <input 
+                                            class="form-control"
+                                            v-bind:class="[ errorsCEPForm.cep ? 'is-invalid' : '']"
+                                            type="text" 
+                                            id="cep" 
+                                            v-model="dataFormCEP.cep"
+                                            name="cep"
+                                            placeholder="CEP"
+                                            v-on:keyup="changeInput($event)">
+                                            <div class="invalid-feedback" v-if="errorsCEPForm.cep">
+                                                #!{errorsCEPForm.cep}!#
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <button type="submit" class="btn btn-primary">Buscar</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="row">
+                            <div class="col" v-show="cepaddress.address">
+                                <div class="card col-4 no-gutters" >
+                                    <div class="card-body">
+                                        <h5 class="card-title">#!{cepaddress.address}!#</h5>
+                                        <p class="card-text">#!{cepaddress.district}!#,#!{cepaddress.city}!#<br/>#!{cepaddress.state}!#</p>
+                                        <button class="btn btn-primary"
+                                        type="button" 
+                                        v-on:click="favAddress(cepaddress)">Favoritar <i class="bi bi-bookmark-star"></i></button>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-auto">
-                                <button type="button" class="btn btn-primary"
-                                v-on:click="getAddress()">Buscar</button>
-                            </div>
                         </div>
-                    </form>
+                    </div>
                 </div>
-                <div class="row">
-                    <div class="col" v-show="cepaddress.address">
-                        <div class="card col-4 no-gutters" >
+                <div class="row mt-3 container-list-favaddress">
+                    <div class="col-12">
+                        <h2>Favoritos</h2>
+                    </div>
+                    <div class="col-4 col-md-12"
+                    v-for="(address, index) in allcepaddress">
+                        <div class="card col no-gutters">
                             <div class="card-body">
-                                <h5 class="card-title">{{cepaddress.address}}</h5>
-                                <p class="card-text">{{cepaddress.district}},{{cepaddress.city}}<br/>{{cepaddress.state}}</p>
-                                <button class="btn btn-primary" 
-                                v-on:click="favAddress(cepaddress)">Favoritar <i class="bi bi-bookmark-star"></i></button>
+                                <h5 class="card-title">#!{address.address}!#</h5>
+                                <p class="card-text">
+                                    #!{address.district}!#<br/>
+                                    #!{address.city}!#<br/>
+                                    #!{address.state}!#
+                                </p>
+                                <button class="btn btn-warning" 
+                                v-on:click="favAddressRemove(index)">
+                                Remover favorito
+                                <i class="bi bi-bookmark-x"></i></button>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-        <div class="row mt-3 container-list-favaddress">
-            <div class="col-12">
-                <h2>Favoritos</h2>
-            </div>
-            <div class="col-4 col-md-12"
-            v-for="(address, index) in allcepaddress">
-                <div class="card col no-gutters">
-                    <div class="card-body">
-                        <h5 class="card-title">{{address.address}}</h5>
-                        <p class="card-text">
-                            {{address.district}}<br/>
-                            {{address.city}}<br/>
-                            {{address.state}}
-                        </p>
-                        <button class="btn btn-warning" 
-                        v-on:click="favAddressRemove(index)">
-                        Remover favorito
-                        <i class="bi bi-bookmark-x"></i></button>
+                <div class="toast-container position-fixed bottom-0 end-0 p-3">
+                    <div id="toastAlreadyFavAddress" 
+                    class="toast align-items-center bg-danger text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                Este endereço já está favoritado!
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    </div>
+                    <div id="toastFloodService" 
+                    class="toast align-items-center bg-warning text-white border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="8000">
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                Você abusou um pouco da api!<br/>
+                                Aguarde uns minutos para fazer outra requisição ou volte depois!
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    </div>
+                    <div id="toastErrorService" 
+                    class="toast align-items-center bg-danger text-white border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="8000">
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                Parece que algo deu errado!<br/>
+                                Tente novamente mais tarde!
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="toast-container position-fixed bottom-0 end-0 p-3">
-            <div id="toastAlreadyFavAddress" class="toast align-items-center bg-danger text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="d-flex">
-                    <div class="toast-body">
-                        <i class="bi bi-exclamation-triangle"></i>
-                        Este endereço já está favoritado!
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-            </div>
-        </div>
+        </cep-component>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
-    <script src="./Components/CEPComponent.js"></script>  
-
+    <script src="./Components/CEPComponent.js"></script>
+    <script src="./app.js"></script>
 </body>
 </html>
