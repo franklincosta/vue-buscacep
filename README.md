@@ -6,4 +6,5 @@ Api's utlizadas:
 
  - [ViaCEP - Webservice CEP e IBGE gratuito](https://viacep.com.br/)
  - [Api CEP | Buscar e Consultar Endereços](https://apicep.com/)
-Separa por componente, a aplicação pode ser reaproveitada de forma simples e eficaz, sendo aplicado em qualquer app que irá receber o componente.
+
+Separada por componente, a aplicação pode ser reaproveitada de forma simples e eficaz, sendo aplicado em qualquer app que irá receber o componente.
