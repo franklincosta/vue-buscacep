@@ -1,11 +1,9 @@
-/*
-  OMDB api key : c5f68364
-*/
-
 Vue.component('cep-component', {
   data:function(){
     return {
       cep:null,
+      busy:false,
+      showMApFavAddress:false,
       cepaddress:{},
       dataFormCEP:{
         cep:null
@@ -28,16 +26,17 @@ Vue.component('cep-component', {
   methods:{
     getAddress:function(){
       let nCEP = this.dataFormCEP.cep;
+      this.setCEPAddress();
       this.callGetCEP(nCEP);
     },
     getCEPAddress:function(){
       return this.cepaddress;
     },
     setCEPAddress:function(address){
-      this.cepaddress = address;
+      this.cepaddress = address || [];
     },
     callAPICEP: async function(cep, nextApi){
-      var idxAPI = 0;
+      let idxAPI = 0;
       let dataAddressModel = this.models.cep;
       const arrAPICEP = [
         {
@@ -61,6 +60,9 @@ Vue.component('cep-component', {
           }
         }
       ];
+      const configMaps = {
+        url:"https://www.google.com.br/maps/place/{district},{city},{state},{code}"
+      }
 
       if(nextApi && nextApi > arrAPICEP.length) return "endapi";
 
@@ -68,7 +70,7 @@ Vue.component('cep-component', {
         idxAPI = nextApi;
       } 
      
-      var urlApiCEP = arrAPICEP[idxAPI].url.replace("{cep}", cep);
+      let urlApiCEP = arrAPICEP[idxAPI].url.replace("{cep}", cep);
       const res = await axios.get(urlApiCEP);
       if(res.status != 200) return 'errorapi';
       if(res.data.status == 400 && arrAPICEP.length == nextApi) return 400;
@@ -76,11 +78,18 @@ Vue.component('cep-component', {
         idxAPI += 1;
         return this.callAPICEP(cep, idxAPI);
       } 
-      var dataRes = res.data;
-      var modelApi = arrAPICEP[idxAPI].model
-      for( var m in modelApi){
+      let dataRes = res.data;
+      let modelApi = arrAPICEP[idxAPI].model
+      for( let m in modelApi){
         dataAddressModel[m] = dataRes[modelApi[m]];
       }
+      let urlMapsAddress = configMaps.url.replace('{district}', dataAddressModel.district)
+      urlMapsAddress = urlMapsAddress.replace('{city}', dataAddressModel.city)
+      urlMapsAddress = urlMapsAddress.replace('{state}', dataAddressModel.state)
+      urlMapsAddress = urlMapsAddress.replace('{code}', dataAddressModel.code)
+      
+      dataAddressModel.mapsgoogle = urlMapsAddress;
+
       return dataAddressModel;
     },
     callGetCEP: async function(cep){
@@ -93,6 +102,7 @@ Vue.component('cep-component', {
       }else if(dataCEP == 'errorapi'){
         this.showToastErrorService();
       }
+      this.busy = false;
       this.setCEPAddress(dataCEP);
     },
     getFavAddress:function(idx){
@@ -101,19 +111,18 @@ Vue.component('cep-component', {
     getAllFavAddress: function(){
       return this.allcepaddress;
     },
-    favAddress: function(address){
-
-      let modelAddress =  this.models.cep;
-
+    favAddress: function(){
+      let address = this.getCEPAddress();
+      let modelAddress = this.models.cep;
+      
       modelAddress.address = address.address;
       modelAddress.city = address.city;
       modelAddress.district = address.district;
       modelAddress.state =  address.state;
       modelAddress.code = address.code;
       
-      let alladdressfav = this.allcepaddress;
-      
-      for(var c in alladdressfav){
+      let alladdressfav = this.getAllFavAddress();
+      for(let c in alladdressfav){
         if(alladdressfav[c].code == modelAddress.code) {
           this.showToastAlreadyFav();
           return; 
@@ -124,7 +133,19 @@ Vue.component('cep-component', {
       this.setLocalStorageCEPAddress();
     },
     favAddressRemove:function(idx){
+      let addressRemove = this.allcepaddress[idx];
+      let localStorageFav = this.getLocalStorageCEPAddress();
+      for(let f = 0; f < localStorageFav.length; f++){
+        if(localStorageFav[f].code == addressRemove.code) {
+          localStorageFav.splice(f, 1);
+          break;
+        }
+      }
       this.allcepaddress.splice(idx,1);
+      this.setLocalStorageCEPAddress();
+    },
+    showSideBarFavAddress:function(){
+
     },
     convertFavAddressToString: function(){
       let alladdressconvert = this.getAllFavAddress();
@@ -133,8 +154,8 @@ Vue.component('cep-component', {
     },
     setLocalStorageCEPAddress: function(){
       let strAddress = this.convertFavAddressToString();
-      var hasAddress = this.getLocalStorageCEPAddress();
-      if(hasAddress) {
+      let hasLocalAddress = this.getLocalStorageCEPAddress();
+      if(hasLocalAddress) {
         localStorage.removeItem('alladdesscep');
       }
       localStorage.setItem('alladdesscep', strAddress);
@@ -144,8 +165,9 @@ Vue.component('cep-component', {
       let arrAddress = JSON.parse(strAddress);
       return arrAddress;
     },
-    setFavAddressFromLocalStorage: function(arrAddress){
-      this.allcepaddress = arrAddress || [];
+    setFavAddressFromLocalStorage: function(){
+      let loadalladdress = this.getLocalStorageCEPAddress();
+      this.allcepaddress = loadalladdress || [];
     },
     showToastById:function(id){
       const toastElem = document.getElementById(id);
@@ -163,6 +185,7 @@ Vue.component('cep-component', {
     },
     formCepValidate: function(){
       if(this.dataFormCEP.cep){
+        this.busy = true;
         this.getAddress(this.dataFormCEP.cep)
         return true;
       }
@@ -171,7 +194,7 @@ Vue.component('cep-component', {
       return false;
     },
     changeInput:function(e){
-      var modelForm = e.currentTarget.name;
+      let modelForm = e.currentTarget.name;
       if(this.dataFormCEP[modelForm]) this.resetInputForm(modelForm)
     },
     resetInputForm:function(model){
@@ -179,8 +202,7 @@ Vue.component('cep-component', {
     }
   },
   mounted:function(){   
-    let loadalladdress = this.getLocalStorageCEPAddress();
-    this.setFavAddressFromLocalStorage(loadalladdress);
+    this.setFavAddressFromLocalStorage();
     this.getAddress();
   }
 })

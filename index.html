@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CEP</title>
+    <title>Busca CEP</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link type="text/css" rel="stylesheet" href="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.css" />
     <link rel="stylesheet" href="./CSS/app.css">
 </head>
 <body>
@@ -38,22 +39,37 @@
                                         </div>
                                     </div>
                                     <div class="col-auto">
-                                        <button type="submit" class="btn btn-primary">Buscar</button>
+                                        <b-button type="submit" variant="primary">Buscar</b-button>
                                     </div>
                                 </div>
                             </form>
                         </div>
+                        <div class="row"
+                            v-show="busy">
+                            <div class="col-12 text-center">
+                                <b-spinner variant="success"></b-spinner><br/>
+                            </div>
+                            <div class="col-12 text-center">
+                                <strong>Buscando endereço aguarde!</strong>
+                            </div>
+                        </div>
                         <div class="row">
                             <div class="col" v-show="cepaddress.address">
-                                <div class="card col-4 no-gutters" >
-                                    <div class="card-body">
-                                        <h5 class="card-title">#!{cepaddress.address}!#</h5>
-                                        <p class="card-text">#!{cepaddress.district}!#,#!{cepaddress.city}!#<br/>#!{cepaddress.state}!#</p>
-                                        <button class="btn btn-primary"
+                                <b-card no-body
+                                    class="col-4 no-gutters">
+                                    <b-card-body>
+                                        <b-card-title>
+                                            #!{cepaddress.address}!#
+                                        </b-card-title>
+                                        <b-card-text>
+                                            #!{cepaddress.district}!#,#!{cepaddress.city}!#<br/>#!{cepaddress.state}!#                                        
+                                        </b-card-text>
+                                        <b-button 
                                         type="button" 
-                                        v-on:click="favAddress(cepaddress)">Favoritar <i class="bi bi-bookmark-star"></i></button>
-                                    </div>
-                                </div>
+                                        variant="primary"
+                                        v-on:click="favAddress()">Favoritar <i class="bi bi-bookmark-star"></i></b-button>
+                                    </b-card-body>
+                                </b-card>
                             </div>
                         </div>
                     </div>
@@ -62,37 +78,64 @@
                     <div class="col-12">
                         <h2>Favoritos</h2>
                     </div>
-                    <div class="col-4 col-md-12"
+                    <div class="col-md-4 col-12"
                     v-for="(address, index) in allcepaddress">
-                        <div class="card col no-gutters">
-                            <div class="card-body">
-                                <h5 class="card-title">#!{address.address}!#</h5>
-                                <p class="card-text">
+                        <b-card 
+                            no-body
+                            class="col no-gutters">
+                            <b-card-body>
+                                <b-card-title>
+                                    #!{address.address}!#
+                                    <button class="btn dropdown-toggle position-absolute top-0 end-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a class="dropdown-item" href="#">
+                                                <b-link 
+                                                    v-bind:href="address.mapsgoogle" 
+                                                    variant="warning"
+                                                    target="_blank">
+                                                    Ver no maps
+                                                </b-link>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </b-card-title>
+                                <b-card-text>
                                     #!{address.district}!#<br/>
                                     #!{address.city}!#<br/>
                                     #!{address.state}!#
-                                </p>
-                                <button class="btn btn-warning" 
-                                v-on:click="favAddressRemove(index)">
-                                Remover favorito
-                                <i class="bi bi-bookmark-x"></i></button>
-                            </div>
-                        </div>
+                                </b-card-text>
+                               
+                            </b-card-body>
+                            <b-card-footer class="d-flex">
+                                <b-button 
+                                    variant="warning"
+                                    type="button"  
+                                    v-on:click="favAddressRemove(index)">
+                                    Remover favorito
+                                    <i class="bi bi-bookmark-x"></i>
+                                </b-button>
+                            </b-card-footer>
+                        </b-card>
                     </div>
                 </div>
-                <div class="toast-container position-fixed bottom-0 end-0 p-3">
+                <div class="toast-container position-fixed top-0 end-0 p-3">
                     <div id="toastAlreadyFavAddress" 
-                    class="toast align-items-center bg-danger text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
-                        <div class="d-flex">
-                            <div class="toast-body">
-                                <i class="bi bi-exclamation-triangle"></i>
-                                Este endereço já está favoritado!
-                            </div>
+                    class="toast align-items-center border-0 hide" 
+                    role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false">
+                        <div class="toast-header bg-danger text-white">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Atenção
                             <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                        <div class="toast-body bg-white">
+                            Este endereço já está favoritado!
                         </div>
                     </div>
                     <div id="toastFloodService" 
-                    class="toast align-items-center bg-warning text-white border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="8000">
+                    class="toast align-items-center bg-warning text-white border-0 hide" 
+                    role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="8000">
                         <div class="d-flex">
                             <div class="toast-body">
                                 <i class="bi bi-exclamation-triangle"></i>
@@ -103,7 +146,7 @@
                         </div>
                     </div>
                     <div id="toastErrorService" 
-                    class="toast align-items-center bg-danger text-white border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="8000">
+                    class="toast align-items-center bg-danger text-white border-0 hide" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="8000">
                         <div class="d-flex">
                             <div class="toast-body">
                                 <i class="bi bi-exclamation-triangle"></i>
@@ -117,9 +160,17 @@
             </div>
         </cep-component>
     </div>
+    <!-- VUEJS -->
     <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- VUEJS -->
+    <!-- BOOTSTRAP -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.5/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
+    <!-- BOOTSTRAP -->
+    <!-- BOOTSTRAP VUEJS -->
+    <script src="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.js"></script>
+    <!-- BOOTSTRAP VUEJS -->
     <script src="./Components/CEPComponent.js"></script>
     <script src="./app.js"></script>
 </body>
